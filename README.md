@@ -4,8 +4,8 @@ Improved predictions of future regional crime densities using auxiliary governme
 
 (Readme in progress)
 
-Todo:
-Detailed Project Description
-Package List
-Codebook
+To-do:
+Detailed Project Description,
+Package List,
+Codebook,
 Add Additional Files/Data Used
