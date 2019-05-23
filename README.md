@@ -8,4 +8,5 @@ To-do:
 Detailed Project Description,
 Package List,
 Codebook,
-Add Additional Files/Data Used
+Add Additional Files/Data Used,
+Reorg/breakup files
