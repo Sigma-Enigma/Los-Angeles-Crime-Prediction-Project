@@ -1,12 +1,6 @@
 # Los-Angeles-Crime-Prediction-Project
 Improved predictions of future regional crime densities using auxiliary government data in combination with kernel intensity estimation techniques 
 
+For the full academic paper on this project go to:
 
-(Readme in progress)
-
-To-do:
-Detailed Project Description,
-Package List,
-Codebook,
-Add Additional Files/Data Used,
-Reorg/breakup files
+https://escholarship.org/uc/item/422213nk
