@@ -210,9 +210,6 @@ zipexcel$avg.burg.counts <- round( (zipexcel$Shape_area.N.19.11/ zipexcel$zip.to
 # zcta5 tigershapefiles
 
 
-# **** Code used to be here that manually imput the population data values for 2015 ***
-
-
 # adding irs_finance stats to shapefile of zip code regions
 
 zipcounts <- data.frame(Zip = as.factor(burgs$Zip))
