@@ -1,16 +1,17 @@
 ---
-title: "Thesis Code redo 2018"
+title: "Thesis Code V2 2018"
 author: "Ryan Arellano"
 date: "February 5, 2018"
 output: html_document
 ---
 
 
-
 Data consists of: burglaries of single family dwellings with date occured within the year of 2015 and date reported within 2015 PLUS two weeks into 2016 (to allow for delays in reporting).
 
+All work in this demonstration is to be pulled from a working directory titled "D:/R Demo WD"
+
 ```{r, echo=FALSE}
-setwd("D:/Dropbox/Thesis Data/Thesis Code Redo Data 2")
+setwd("D:/R Demo WD")
 crime <- read.csv( "SFR Burgs from 2014 to 2017.csv" , header = TRUE)
 
 burgs <- crime
@@ -43,7 +44,9 @@ save( burgs, file="burglariestest.RData")
 ### end lat/long format cleaning
 
 
-#### Geocoding 
+#### BEGIN GEOCODING OF LAT/LONG ADDRESSES
+# Note due to bugs in geocoding through googles service, a few geocoding passes were made. 
+# Eventually I realized I could add time random uniform time delays (usually 1-3 seconds per geocode) to greatly reduce the number of errors per pass.
 
 ## Start first geocode pass
 length(adr1)
@@ -92,7 +95,7 @@ geocodeQueryCheck()
 # so I broke up the address list into six different sets adr1.1 - adr1.6
 # I cleaned these missing values by rerunning geocode on the remaining NA values
 
-# start second geocode pass
+# start second geocode pass because some still returned errors
 adr1.1 <- adr1
 
 save(adr1.1, file="adr2.1.RData") # I fixed some errors for the dataset I geocoded (it omitted 0,0 locations)
@@ -161,6 +164,9 @@ save(adr1, file="adr.final.RData")
 
 
 
+##### END GEOCODING
+
+
 # next steps: add in other data variables (zipcode datatable)
 # Add addresses to burgs dataframe
 # Extract zip codes from addresses
@@ -171,8 +177,13 @@ save(adr1, file="adr.final.RData")
 # Consider doing simple tests of differences between categorical groups
 # Consider doing tests of clustering
 # Consider using kernel density estimate of previous year as predictor for next year ****
+
+
+
+
 # Cross validate model
 
+load("adr.final.RData") # object named adr1
 
 # Create new address variable columns (breaking )
 burgs$City <- rep(NA, dim(burgs)[1])
@@ -192,19 +203,21 @@ ii=1
 for(ii in 1:length(zip2)) {
 lengths1[ii] <- length(zip2[[ii]])
 }
+
+#check number of 4 character length entries
 table(lengths1) #  7 weird addresses
 
 # sets zip codes
 zip3 <- gsub('^.*, CA \\s*|\\s*, USA.*$', '', burgs$Address )
 burgs$Zip <- zip3
 
+# checks counts of each zip code, reveals a few bad entries
 table(zip3)
 
 
-# manually fix a few addresses
+# programatically fix a few addresses
 which(zip3 == "5225-5229 Coliseum St, Los Angeles, CA" )
 burgs$Zip[which(zip3 == "5225-5229 Coliseum St, Los Angeles, CA" )] <- "90008"
-
 
 which(zip3 == "5400-5424 W 3rd St, Los Angeles, CA" )
 burgs$Zip[which(zip3 == "5400-5424 W 3rd St, Los Angeles, CA" )] <- "90020"
@@ -219,17 +232,19 @@ which(zip3 == "Glenn Anderson Fwy, Los Angeles, CA" )
 burgs$Zip[which(zip3 == "Glenn Anderson Fwy, Los Angeles, CA" )] <- "90061"
 
 
-#sets city name
+#sets city names
 ii=1
 for(ii in 1:length(burgs$City)) {
 burgs$City[ii] <- zip2[[ii]][2]
 }
 
-# check city names
+# check city names counts
 table(burgs$City) # only 7 error @ values  == which(lengths1 == 5)
+
+
+# programatically fix remaining city names
 burgs$City[which(lengths1 == 5)] <- "Studio City"
 
-# manually fix remaining city names
 burgs[ (which(burgs$City == "1999 Avenue of the Stars" )), ]
 burgs$City[ which(burgs$City == "1999 Avenue of the Stars" ) ] <- "Los Angeles"
 
@@ -239,7 +254,6 @@ burgs$City[ which(burgs$City == "3730 W 27th St" ) ] <- "Los Angeles"
 burgs[ (which(burgs$City == "915 7th Ave" )), ]
 burgs$City[ which(burgs$City == "915 7th Ave" ) ] <- "Venice"
 
-# poorly coded addresses had city and zip code fixed manually
 
 
 
@@ -253,7 +267,7 @@ save(burgs, file="burglaries2.RData")
 ```{r, echo= FALSE}
 
 # 
-irs.fin <- read.csv("D:/Dropbox/Thesis Data/14zpallagi.csv", header=TRUE)
+irs.fin <- read.csv("D:/R demo WD/14zpallagi.csv", header=TRUE)
 irs_finance <- subset(irs.fin, STATE=="CA")
 save(irs_finance, file="irs_finance.RData")
 View(irs_finance)
@@ -263,7 +277,9 @@ load("irs_finance.RData")
 
 burgs$Zip <- as.numeric(burgs$Zip)
 
-# created columns for additional variables (later exluded these if I recall correctly)
+# created columns for additional variables 
+# (later exluded most of these if I recall correctly)
+
 burgs$Num.exemps.1 <- NA
 burgs$Num.returns.1 <- NA
 burgs$Tot.income.1 <- NA
@@ -292,14 +308,15 @@ burgs$Num.exemps.total <- NA
 burgs$Num.returns.total <- NA
 burgs$Tot.income.total <- NA
 
-save(burgs, file="burglaries3.RData")
 
 # PASTE LINK TO CODEBOOK DESCRIPTION OF IRS_FINANCE DATA HERE :
 # Remember to add codebook to readme file
 
-#  N2 number of exemptions V10
-#  N02650 Number of returns with total income V16
-#  A02650 Total income amount (in thousands)  V17 
+
+#  VARIABLE INFORMATION:
+#  N2         Number of exemptions V10
+#  N02650     Number of returns with total income V16
+#  A02650     Total income amount (in thousands)  V17 
 ```
 
 
@@ -320,6 +337,8 @@ which(irs_finance$zipcode == (j)) # returns 6 (or less) relevant rows
 burgs[i, set1] <-colSums(irs_finance[which(irs_finance$zipcode == (j)),c(10,16,17)]) #store totals of as 3 new elements in row
 }
 
+
+save(burgs, file="burglaries3.RData")
 ```
 
 ```{r, echo=FALSE}
@@ -332,7 +351,7 @@ burgs$percent.agi.3 <- NA
 burgs$percent.agi.4 <- NA
 burgs$percent.agi.5 <- NA
 burgs$percent.agi.6 <- NA
-Vshift <- dim(burgs)[2]-6 #number of variables shifted from first row
+Vshift <- dim(burgs)[2]-6 # number of variables shifted from first row
 
 i = 1
 n= dim(burgs)[1]
@@ -353,7 +372,11 @@ save(burgs, file="burglaries4.RData") # note the code in the chunk above was alt
 ```
 
 ```{r, echo=FALSE}
-## All this code is no-longer necessary since I properly geocoded with a single pass this time around. 5/12/18
+## IMPORTANT NOTE!!!!! 
+
+# All this code in this chunk is no-longer necessary since I properly geocoded with a single pass this time around. 5/12/18
+
+############   START IGNORE   ############
 
 ## This folded code is a bit patchwork. I used a second geocoder to bypass the limits and stitched the results together.  (march 2018)
 
@@ -453,15 +476,18 @@ save(burgs, file="burglaries4.6.RData")
 
 
 
-# after fixing zip codes, and input city names
-save(burgs, file="burglaries5.RData")
+# after fixing zip codes, and input city names 
+# save(burgs, file="burglaries5.RData")
 
 
 # end folded patchwork code no longer needed march 2018
 
+############   END IGNORE   ############
+
+
+
 
 # Improve formatting of timestamps
-
 load("burglaries5.RData")
 
 
@@ -482,6 +508,7 @@ burgs$Time.Occurred <- strptime(burgs$Time.Occurred.NEW, format = "%m/%d/%Y %H:%
 
 which(is.na(burgs$Time.Occurred) == TRUE)
 
+# deleting temporary columns
 burgs$Time.Occurred.NEW <- NULL
 burgs$HOUR.OCC <- NULL
 burgs$MIN.OCC <- NULL
@@ -513,14 +540,7 @@ save(burgs, file="burglaries7.RData")
 ```
 
 
-```{r}
-tab1 <- readHTMLTable("http://www.laalmanac.com/employment/em12c.php")
-
-
-
-```
-
-
+"burgs"  table is for years 2014-2017
 ```{r}
 tdiffs <- difftime(burgs$Time.Reported, burgs$Time.Occurred, units= "days" )
 
@@ -530,18 +550,62 @@ hist(as.numeric(tdiffs))
 
 
 burgs14 <- subset(burgs, format(burgs$Time.Occurred, "%Y")=="2014")
-
-
+save(burgs14, file="burglaries7.2014.RData")
 
 burgs15 <- subset(burgs, format(burgs$Time.Occurred, "%Y")=="2015")
-
+save(burgs15, file="burglaries7.2015.RData")
 
 burgs16 <- subset(burgs, format(burgs$Time.Occurred, "%Y")=="2016")
 
-save(burgs, file="burglaries7.2016.RData")
+save(burgs16, file="burglaries7.2016.RData")
 
 burgs17 <- subset(burgs, format(burgs$Time.Occurred, "%Y")=="2017")
 
-save(burgs, file="burglaries7.2017.RData")
+save(burgs17, file="burglaries7.2017.RData")
 
+```
+
+
+
+```{r}
+##################################################################
+####### BEGIN CODE for 2013 year of sfd burglary locations #######
+burgs13 <- read.csv(file="D:/Downloads/Burglary Data 2013.csv", header=TRUE)
+
+burgs13$Location <- as.character(burgs13$Location)
+
+# Cleaning up coordinate character data
+gsub1 <- gsub( "\\(" , "", burgs13$Location)
+gsub2 <- gsub( "\\)", "", gsub1 )
+
+
+strspt1 <- strsplit( gsub2, ",")
+
+strspt1 <- unlist(strspt1)
+
+Lat <- strspt1[seq(from = 1 , to = length(strspt1)-1, by = 2)]
+Long <- strspt1[seq(from = 2 , to = length(strspt1), by = 2)]
+
+burgs13$Lat <- as.numeric(Lat)
+burgs13$Long <- as.numeric(Long)
+
+burgs13$Row.num <- rep(NA, dim(burgs13)[1])
+Row.num <- 1:dim(burgs13)[1]
+burgs13 <- cbind(Row.num, burgs13[,1:28] ) 
+# end cleaning of coodrinate character data
+
+# clear workspace
+rm(gsub1); rm(gsub2); rm(strspt1); rm(Row.num)
+
+
+save( burgs13, file="burglaries1.2013.RData")
+
+####### END CODE for 2013 year of sfd burglary locations #######
+################################################################
+```
+
+
+
+```{r}
+save.image(file="LAPD_Crime_Data_Cleanup_Image.RData")
 ```
