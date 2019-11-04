@@ -6,7 +6,7 @@ For the full academic paper on this project go to:
 https://escholarship.org/uc/item/422213nk
 
 
-ORDER OF CODE FILES
+Order of File Execution:
 
 1) LAPD Crime Data Cleanup.Rmd
 
